@@ -41,7 +41,7 @@ from .object import (
     Exchange
 )
 from .setting import SETTINGS
-from .utility import get_folder_path, TRADER_DIR
+from .utility import get_folder_path, load_json, TRADER_DIR
 
 
 class MainEngine:
@@ -49,8 +49,9 @@ class MainEngine:
     Acts as the core of the trading platform.
     """
 
-    def __init__(self, event_engine: EventEngine = None) -> None:
+    def __init__(self, event_engine: EventEngine = None, engine_name: str = "") -> None:
         """"""
+        self.engine_name = engine_name
         if event_engine:
             self.event_engine: EventEngine = event_engine
         else:
@@ -61,6 +62,8 @@ class MainEngine:
         self.engines: Dict[str, BaseEngine] = {}
         self.apps: Dict[str, BaseApp] = {}
         self.exchanges: List[Exchange] = []
+
+        self.connect_status = False
 
         os.chdir(TRADER_DIR)    # Change working directory
         self.init_engines()     # Initialize function engines
@@ -161,6 +164,15 @@ class MainEngine:
         Get all exchanges.
         """
         return self.exchanges
+
+    def connect_all(self) -> None:
+        """
+        Start connection all gateways.
+        """
+        for gateway_name, gateway in self.gateways.items():
+            filename: str = f"connect_{gateway_name.lower()}.json"
+            setting = load_json(filename)
+            gateway.connect(setting)
 
     def connect(self, setting: dict, gateway_name: str) -> None:
         """

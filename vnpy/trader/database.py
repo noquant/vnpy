@@ -125,6 +125,16 @@ class BaseDatabase(ABC):
         """
         pass
 
+    def get_bar_overview_ex(
+        self,
+        end: datetime = None,
+        interval: Interval = Interval.MINUTE
+    ) -> List[BarOverview]:
+        """
+        Return bar data avaible in database.
+        """
+        return []
+
     @abstractmethod
     def get_tick_overview(self) -> List[TickOverview]:
         """

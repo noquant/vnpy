@@ -2,6 +2,7 @@
 Implements main window of the trading platform.
 """
 
+import datetime
 from types import ModuleType
 import webbrowser
 from functools import partial
@@ -47,6 +48,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.widgets: Dict[str, QtWidgets.QWidget] = {}
         self.monitors: Dict[str, BaseMonitor] = {}
+        
+        self.timerid = self.startTimer(30000)
+        self.auto_close = False
 
         self.init_ui()
 
@@ -244,15 +248,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Call main engine close function before exit.
         """
-        reply = QtWidgets.QMessageBox.question(
-            self,
-            "退出",
-            "确认退出？",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-            QtWidgets.QMessageBox.No,
-        )
-
-        if reply == QtWidgets.QMessageBox.Yes:
+        if self.auto_close:
+            #
             for widget in self.widgets.values():
                 widget.close()
 
@@ -265,8 +262,47 @@ class MainWindow(QtWidgets.QMainWindow):
 
             event.accept()
         else:
-            event.ignore()
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                "退出",
+                "确认退出？",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No,
+            )
 
+            if reply == QtWidgets.QMessageBox.Yes:
+                for widget in self.widgets.values():
+                    widget.close()
+
+                for monitor in self.monitors.values():
+                    monitor.save_setting()
+
+                self.save_window_setting("custom")
+
+                self.main_engine.close()
+
+                event.accept()
+            else:
+                event.ignore()
+
+    def timerEvent(self, event: QtCore.QTimerEvent) -> None:
+        """
+        Call main engine close function before exit.
+        """
+        if self.timerid == event.timerId():
+            if not self.main_engine.connect_status:
+                self.main_engine.connect_all()
+                self.main_engine.connect_status = True
+
+            last_time = datetime.datetime.now()
+            if last_time.hour == 2 and last_time.minute == 45:
+                self.auto_close = True
+                self.close()
+            elif last_time.hour == 16 and last_time.minute == 15:
+                self.auto_close = True
+                self.close()
+
+            
     def open_widget(self, widget_class: QtWidgets.QWidget, name: str) -> None:
         """
         Open contract manager.

@@ -294,7 +294,10 @@ class BaseMonitor(QtWidgets.QTableWidget):
         for column, header in enumerate(self.headers.keys()):
             setting: dict = self.headers[header]
 
-            content = data.__getattribute__(header)
+            if header == 'row_index':
+                content = '%04d' % self.rowCount()
+            else:
+                content = data.__getattribute__(header)
             cell: QtWidgets.QTableWidgetItem = setting["cell"](content, data)
             self.setItem(0, column, cell)
 
@@ -382,6 +385,7 @@ class TickMonitor(BaseMonitor):
     sorting: bool = True
 
     headers: dict = {
+        "row_index": {"display": "索引", "cell": BaseCell, "update": False},
         "symbol": {"display": "代码", "cell": BaseCell, "update": False},
         "exchange": {"display": "交易所", "cell": EnumCell, "update": False},
         "name": {"display": "名称", "cell": BaseCell, "update": True},
